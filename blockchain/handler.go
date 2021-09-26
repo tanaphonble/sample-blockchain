@@ -8,17 +8,17 @@ import (
 )
 
 type Handler struct {
-	blockChain *BlockChain
+	blockChain *Blockchain
 }
 
-func NewHandler(blockChain *BlockChain) *Handler {
+func NewHandler(blockChain *Blockchain) *Handler {
 	return &Handler{
 		blockChain: blockChain,
 	}
 }
 
-func (h *Handler) GetBlockChain(c echo.Context) error {
-	return c.JSON(http.StatusOK, GetFullBlockChainResponse{
+func (h *Handler) GetBlockchain(c echo.Context) error {
+	return c.JSON(http.StatusOK, GetFullBlockchainResponse{
 		Chain:  h.blockChain.Chain,
 		Length: len(h.blockChain.Chain),
 	})
@@ -38,20 +38,50 @@ func (h *Handler) MineBlock(c echo.Context) error {
 }
 
 func (h *Handler) AddTransaction(c echo.Context) error {
-	var req AddTransactionRequest
-	if err := c.Bind(&req); err != nil {
+	var request AddTransactionRequest
+	if err := c.Bind(&request); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"message": "Missing fields",
 		})
 	}
 
 	index := h.blockChain.AddTransaction(
-		req.Sender,
-		req.Recipient,
-		req.Amount,
+		request.Sender,
+		request.Recipient,
+		request.Amount,
 	)
 
 	return c.JSON(http.StatusCreated, map[string]string{
 		"message": fmt.Sprintf("Transaction will be added to Block %d", index),
+	})
+}
+
+func (h *Handler) AddNodes(c echo.Context) error {
+	var request AddNodesRequest
+	if err := c.Bind(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"message": "Error Missing node(s) info",
+		})
+	}
+
+	h.blockChain.AddNodes(request.Nodes)
+
+	return c.JSON(http.StatusCreated, map[string]interface{}{
+		"message": "New nodes added",
+		"nodes":   request.Nodes,
+	})
+}
+
+func (h *Handler) SyncNodes(c echo.Context) error {
+	if updated := h.blockChain.UpdateBlockchain(); updated {
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"message":    "The blockchain has been updated to the latest",
+			"blockchain": h.blockChain.Chain,
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"message":    "Our blockchain is the latest",
+		"blockchain": h.blockChain.Chain,
 	})
 }

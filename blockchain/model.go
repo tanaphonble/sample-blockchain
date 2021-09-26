@@ -6,9 +6,13 @@ type AddTransactionRequest struct {
 	Amount    float64 `json:"amount"`
 }
 
-type GetFullBlockChainResponse struct {
-	Chain  []Block `json:"chain"`
-	Length int     `json:"length"`
+type AddNodesRequest struct {
+	Nodes []string `json:"nodes"`
+}
+
+type GetFullBlockchainResponse struct {
+	Chain  Chain `json:"chain"`
+	Length int   `json:"length"`
 }
 
 type MineBlockResponse struct {
